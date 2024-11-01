@@ -64,6 +64,18 @@ El código se encuentra en el archivo `main.ino`. Carga este código en el Ardui
 1. **Monitor Serial**: Muestra los niveles de actividad en cada canal escaneado.
 2. **Pantalla OLED**: Visualiza la intensidad de señal en cada canal en el grupo actual.
 
+## Propósito Educativo y Advertencia
+
+Este proyecto está diseñado **exclusivamente con fines educativos y experimentales**. La creación de interferencias en el espectro de RF (jamming) puede afectar dispositivos de comunicación inalámbrica y está regulada en muchas jurisdicciones. 
+
+### Advertencia
+**No uses este proyecto en entornos donde pueda interferir con otros dispositivos críticos o de comunicaciones.** Asegúrate de cumplir con las normativas locales y obtener los permisos necesarios antes de realizar cualquier tipo de transmisión de interferencias. 
+
+El autor y los colaboradores de este proyecto **no se hacen responsables** de cualquier mal uso de este software o hardware. 
+
+> **Recordatorio:** Este proyecto está destinado a fines educativos para entender el espectro RF y su funcionamiento. Usa este conocimiento de manera responsable.
+
+
 ## Notas Adicionales
 
 - Este proyecto es para uso experimental y educativo.
