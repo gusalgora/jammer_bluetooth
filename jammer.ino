@@ -20,31 +20,16 @@ RF24 radio2(CE2, CSN2);
 
 #define CHANNELS 64
 int channel[CHANNELS];
-
-int line;
-char grey[] = " .:-=+*aRW";
-
 #define BT1 2
 #define BT2 3
 
-byte count;
-byte sensorArray[128];
-byte drawHeight;
-
-char filled = 'F'; 
-char drawDirection = 'R'; 
-char slope = 'W'; 
-
-const uint8_t num_channels = 64;
-int values[num_channels];
-int valuesDisplay[32];
+bool jamming = true; 
 int channels = 0;
 const int num_reps = 50;
-bool jamming = true;
 
 void setup() {
   Serial.begin(57600);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
 
   // Configuración del primer transmisor
@@ -97,41 +82,33 @@ void scanChannels(RF24 &radio) {
 }
 
 void outputChannels() {
-  int norm = 0;
-  for (int i = 0; i < CHANNELS; i++)
-    if (channel[i] > norm) norm = channel[i];
-  
-  Serial.print('|');
-  for (int i = 0; i < CHANNELS; i++) {
-    int pos = (norm != 0) ? (channel[i] * 10) / norm : 0;
-    if (pos == 0 && channel[i] > 0) pos++;
-    if (pos > 9) pos = 9;
-    Serial.print(grey[pos]);
-    channel[i] = 0;
-  }
-  Serial.print("| ");
-  Serial.println(norm);
-}
-
-// Visualización en la pantalla OLED
-void outputOLED(int norm) {
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  
-  if (jamming) {
-    display.println("Modo: Jamming");
-  } else {
-    display.println("Modo: Escaneo");
-    display.println("Canal | Intensidad");
-    for (int i = 0; i < CHANNELS; i++) {
-      display.setCursor(0, 12 + i * 2);
-      display.print(String(i) + " ");
-      int pos = (norm != 0) ? (channel[i] * 10) / norm : 0;
-      display.print(grey[pos]);
+
+  // Encuentra el máximo valor para normalizar la escala
+  int maxVal = 0;
+  int maxChannel = 0;
+  for (int i = 0; i < CHANNELS; i++) {
+    if (channel[i] > maxVal) {
+      maxVal = channel[i];
+      maxChannel = i;
     }
   }
+
+  // Dibuja cada canal como una barra vertical en la pantalla
+  for (int i = 0; i < CHANNELS; i++) {
+    int barHeight = map(channel[i], 0, maxVal, 0, display.height());
+    display.drawLine(i * 2, display.height(), i * 2, display.height() - barHeight, WHITE);
+    channel[i] = 0; // Resetea el valor del canal después de mostrarlo
+  }
+
+  // Muestra el canal con la señal más fuerte
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("Max Ch: ");
+  display.print(maxChannel);
+  display.print(" Level: ");
+  display.print(maxVal);
 
   display.display();
 }
@@ -145,28 +122,14 @@ void jammer(RF24 &radio) {
 }
 
 void loop() {
-  int norm = 0;
-
   if (jamming) {
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.println("Modo: Jamming");
-    display.display();
     jammer(radio1);
     jammer(radio2);
   } else {
     scanChannels(radio1);
     scanChannels(radio2);
-
-    for (int i = 0; i < CHANNELS; i++) {
-      if (channel[i] > norm) norm = channel[i];
-    }
-
     outputChannels();
-    outputOLED(norm);
   }
 
-  delay(1000); // Ajusta el retardo según la frecuencia deseada de escaneo o jamming
+  delay(500); // Ajusta el retardo según la frecuencia deseada de escaneo o jamming
 }
