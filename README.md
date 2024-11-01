@@ -1,61 +1,70 @@
-# jammer_bluetooth
-Bloqueador RF
-1. Conexiones del OLED (SSD1306):
-VCC del OLED → 5V del Arduino
-GND del OLED → GND del Arduino
-SDA del OLED → A4 del Arduino (SDA para I2C)
-SCL del OLED → A5 del Arduino (SCL para I2C)
-2. Conexiones de los módulos nRF24L01:
-Los módulos nRF24L01 requieren una fuente de 3.3V y consumen bastante corriente, así que es recomendable usar un capacitor de 10 µF entre VCC y GND para estabilizar la alimentación.
+# RF Spectrum Scanner & Jammer
 
-Primer Transmisor (radio1)
-CE1 (Pin CE del nRF) → Pin 7 del Arduino
-CSN1 (Pin CSN del nRF) → Pin 8 del Arduino
-MISO del nRF → Pin 12 del Arduino
-MOSI del nRF → Pin 11 del Arduino
-SCK del nRF → Pin 13 del Arduino
-VCC del nRF → 3.3V del Arduino
-GND del nRF → GND del Arduino
-Segundo Transmisor (radio2)
-CE2 (Pin CE del nRF) → Pin 9 del Arduino
-CSN2 (Pin CSN del nRF) → Pin 10 del Arduino
-MISO del nRF → Pin 12 del Arduino
-MOSI del nRF → Pin 11 del Arduino
-SCK del nRF → Pin 13 del Arduino
-VCC del nRF → 3.3V del Arduino
-GND del nRF → GND del Arduino
-Nota: Los pines MISO, MOSI, y SCK son compartidos entre los dos transmisores porque ambos están conectados al mismo bus SPI. Solo los pines CE y CSN deben ser individuales para cada módulo.
+Este proyecto utiliza Arduino y módulos **nRF24L01** para escanear el espectro de RF de 2.4 GHz o generar interferencias ("jamming") en los canales seleccionados. También incluye una pantalla OLED para mostrar el nivel de actividad en cada canal escaneado.
 
-3. Conexiones de los botones (BT1 y BT2):
-BT1 (Botón 1) → Pin 2 del Arduino (configurado como interruptor en el código)
-BT2 (Botón 2) → Pin 3 del Arduino (configurado como interruptor en el código)
-Ambos botones deben conectarse a GND cuando son presionados. Para ello, usa la resistencia de pull-up interna configurada en el código (INPUT_PULLUP), que evita la necesidad de resistencias externas.
+## Características
 
-Esquema de conexión resumido:
-Componente	Pin del Arduino	Pin del Componente
-OLED SSD1306	5V, GND, A4, A5	VCC, GND, SDA, SCL
-NRF24L01 (CE1)	7	CE
-NRF24L01 (CSN1)	8	CSN
-NRF24L01 (CE2)	9	CE
-NRF24L01 (CSN2)	10	CSN
-NRF24L01 (MISO)	12	MISO
-NRF24L01 (MOSI)	11	MOSI
-NRF24L01 (SCK)	13	SCK
-Botón 1 (BT1)	2	-
-Botón 2 (BT2)	3	-
-Este esquema te permitirá tener los dos módulos nRF24L01 y el OLED trabajando en conjunto con el Arduino.
+- Escaneo del espectro de RF en la banda de 2.4 GHz.
+- Generación de interferencia en canales específicos.
+- Control a través de botones para cambiar de canal y alternar entre los modos de escaneo y jamming.
+- Visualización en pantalla OLED de la actividad de cada canal.
 
-#botones
-En este código, los interruptores (botones BT1 y BT2) tienen estas funciones:
+## Componentes Necesarios
 
-Botón 1 (BT1 en Pin 2):
+- **Arduino** (Uno, Mega, o compatible).
+- **Módulos nRF24L01** (2 unidades).
+- **Pantalla OLED** (128x32, protocolo I2C).
+- **Botones** (2 unidades).
+- **Conexión Serial** (opcional, para monitorizar actividad en la computadora).
 
-Función: Cambiar el canal de transmisión de los módulos nRF24L01.
-Detalles: Cada vez que se presiona, incrementa la variable channels que selecciona el grupo de canales (5 canales consecutivos) que se utilizarán para el "jamming" o para el escaneo. Cuando channels alcanza el valor máximo (13 en este caso), vuelve a 0, reiniciando el ciclo de canales.
-Botón 2 (BT2 en Pin 3):
+## Conexiones del Hardware
 
-Función: Activar o desactivar el modo de "jamming" (interferencia) de los módulos.
-Detalles: Este botón invierte el valor de la variable jamming, lo que alterna entre dos modos:
-Modo Jamming (jamming = true): Ambos módulos nRF24L01 transmiten un patrón de interferencia en un grupo de canales especificado.
-Modo Escaneo (jamming = false): Ambos módulos cambian a modo de escaneo, midiendo la actividad en los canales seleccionados. Esto permite visualizar el uso del espectro de RF (radiofrecuencia) en esos canales y mostrarlo por la interfaz Serial y la pantalla OLED.
-Ambos botones están configurados para detectar cambios usando interrupciones, lo que permite que el Arduino responda inmediatamente cuando se presionan, sin importar qué esté haciendo en ese momento en el bucle principal (loop).
+| Componente        | Pin de Arduino | Pin del Componente |
+|-------------------|----------------|---------------------|
+| **nRF24L01 (1)**  | CE (Pin 7)     | CE (Pin nRF24L01)  |
+|                   | CSN (Pin 8)    | CSN (Pin nRF24L01) |
+| **nRF24L01 (2)**  | CE (Pin 9)     | CE (Pin nRF24L01)  |
+|                   | CSN (Pin 10)   | CSN (Pin nRF24L01) |
+| **Pantalla OLED** | SDA (A4)       | SDA                |
+|                   | SCL (A5)       | SCL                |
+| **Botón 1 (BT1)** | Pin 2          | A Tierra (GND) al pulsar |
+| **Botón 2 (BT2)** | Pin 3          | A Tierra (GND) al pulsar |
+
+> **Nota:** Ambos módulos nRF24L01 comparten las conexiones de alimentación y datos SPI (SCK, MOSI, MISO).
+
+## Instalación de Librerías
+
+Las siguientes librerías deben estar instaladas en el entorno de Arduino:
+
+1. **SPI**
+2. **Wire**
+3. **Adafruit_GFX**
+4. **Adafruit_SSD1306**
+5. **RF24**
+6. **nRF24L01**
+
+Instálalas desde el Administrador de Librerías de Arduino.
+
+## Código
+
+El código se encuentra en el archivo `main.ino`. Carga este código en el Arduino después de hacer todas las conexiones.
+
+## Uso de los Botones
+
+- **Botón 1 (BT1)**: Cambia el canal de transmisión.
+  - Cada vez que se presiona, selecciona un grupo de 5 canales consecutivos para el jamming o escaneo.
+  - Los canales se reinician al alcanzar el valor máximo.
+
+- **Botón 2 (BT2)**: Alterna entre los modos de "jamming" y "escaneo".
+  - **Modo Jamming** (`jamming = true`): Transmite un patrón de interferencia en el grupo de canales seleccionado.
+  - **Modo Escaneo** (`jamming = false`): Realiza un escaneo del espectro en el grupo de canales seleccionado y muestra los datos en la pantalla OLED y en el monitor serial.
+
+## Visualización de Resultados
+
+1. **Monitor Serial**: Muestra los niveles de actividad en cada canal escaneado.
+2. **Pantalla OLED**: Visualiza la intensidad de señal en cada canal en el grupo actual.
+
+## Notas Adicionales
+
+- Este proyecto es para uso experimental y educativo.
+- Asegúrate de cumplir con las normativas locales sobre el uso de jamming de RF, ya que puede interferir en otros dispositivos de comunicación inalámbrica.
