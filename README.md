@@ -47,7 +47,7 @@ Instálalas desde el Administrador de Librerías de Arduino.
 
 ## Código
 
-El código se encuentra en el archivo `main.ino`. Carga este código en el Arduino después de hacer todas las conexiones.
+El código se encuentra en el archivo `jammer.ino`. Carga este código en el Arduino después de hacer todas las conexiones.
 
 ## Uso de los Botones
 
