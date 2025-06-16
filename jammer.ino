@@ -65,17 +65,37 @@ void pressBt01() {
 }
 
 void pressBt02() {
-  jamming = !jamming;
-  delay(200);
+  static unsigned long last_interrupt_time_bt2 = 0; // Static variable for debouncing
+  unsigned long interrupt_time = millis();
+  if (interrupt_time - last_interrupt_time_bt2 > 200) { // 200ms debounce period
+    jamming = !jamming;
+    last_interrupt_time_bt2 = interrupt_time; // Update time after action
+  }
 }
 
 void scanChannels(RF24 &radio) {
-  for (int j = 0; j < num_reps; j++) {
-    for (int i = 0; i < CHANNELS; i++) {
-      radio.setChannel(i);
+  int start_channel = channels * 5;
+
+  // Initialize/clear the 5 channels in the current group within the global array
+  for (int k = 0; k < 5; k++) {
+    int current_channel_idx = start_channel + k;
+    if (current_channel_idx < CHANNELS) {
+      channel[current_channel_idx] = 0; // Reset only the current group's channels
+    }
+  }
+
+  for (int j = 0; j < num_reps; j++) { // num_reps is 50
+    for (int k = 0; k < 5; k++) {      // Iterate through the 5 channels in the group
+      int current_channel_to_scan = start_channel + k;
+
+      if (current_channel_to_scan >= CHANNELS) { // Boundary check for CHANNELS (64)
+        continue;
+      }
+
+      radio.setChannel(current_channel_to_scan);
       delayMicroseconds(40);
       if (radio.testRPD()) {
-        channel[i]++;
+        channel[current_channel_to_scan]++;
       }
     }
   }
@@ -83,31 +103,58 @@ void scanChannels(RF24 &radio) {
 
 void outputChannels() {
   display.clearDisplay();
+  int start_channel = channels * 5;
 
-  // Encuentra el máximo valor para normalizar la escala
   int maxVal = 0;
-  int maxChannel = 0;
-  for (int i = 0; i < CHANNELS; i++) {
-    if (channel[i] > maxVal) {
-      maxVal = channel[i];
-      maxChannel = i;
+  // Initialize maxChannelInGroup to the first valid channel in the group or start_channel itself
+  maxChannelInGroup = start_channel;
+  for(int k=0; k<5; ++k) {
+    if(start_channel + k < CHANNELS) {
+      maxChannelInGroup = start_channel + k;
+      break;
     }
   }
 
-  // Dibuja cada canal como una barra vertical en la pantalla
-  for (int i = 0; i < CHANNELS; i++) {
-    int barHeight = map(channel[i], 0, maxVal, 0, display.height());
-    display.drawLine(i * 2, display.height(), i * 2, display.height() - barHeight, WHITE);
-    channel[i] = 0; // Resetea el valor del canal después de mostrarlo
+
+  // Find maxVal and maxChannelInGroup within the current 5-channel group
+  for (int k = 0; k < 5; k++) {
+    int current_channel_idx = start_channel + k;
+    if (current_channel_idx >= CHANNELS) { // Boundary check
+      continue;
+    }
+    if (channel[current_channel_idx] > maxVal) {
+      maxVal = channel[current_channel_idx];
+      maxChannelInGroup = current_channel_idx;
+    }
   }
 
-  // Muestra el canal con la señal más fuerte
+  int bar_width = display.width() / 5; // e.g., 128 / 5 = 25 (integer division)
+
+  // Draw bars for the 5 channels in the group
+  for (int k = 0; k < 5; k++) {
+    int current_channel_to_display = start_channel + k;
+    if (current_channel_to_display >= CHANNELS) { // Boundary check
+      continue;
+    }
+
+    int barHeight = 0;
+    if (maxVal > 0) { // Avoid division by zero if maxVal is 0 and map issues
+        barHeight = map(channel[current_channel_to_display], 0, maxVal, 0, display.height());
+    }
+
+    // Use fillRect for wider bars, leave a small gap (e.g., 2 pixels) for clarity
+    display.fillRect(k * bar_width, display.height() - barHeight, bar_width > 1 ? bar_width - 1 : bar_width, barHeight, WHITE);
+    // Note: The global channel array `channel[current_channel_to_display]` is NOT reset here.
+  }
+
   display.setCursor(0, 0);
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.print("Max Ch: ");
-  display.print(maxChannel);
-  display.print(" Level: ");
+  display.print("Grp:");
+  display.print(channels);
+  display.print(" Max:"); // Abbreviated to fit
+  display.print(maxChannelInGroup);
+  display.print(" Lvl:");
   display.print(maxVal);
 
   display.display();
@@ -115,7 +162,7 @@ void outputChannels() {
 
 void jammer(RF24 &radio) {
   const char text[] = "xxxxxxxxxxxxxxxx";
-  for (int i = (channels * 5) + 1; i < (channels * 5) + 23; i++) {
+  for (int i = (channels * 5); i < (channels * 5) + 5; i++) {
     radio.setChannel(i);
     radio.write(&text, sizeof(text));
   }
