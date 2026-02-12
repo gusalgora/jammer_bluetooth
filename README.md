@@ -51,18 +51,18 @@ El código se encuentra en el archivo `jammer.ino`. Carga este código en el Ard
 
 ## Uso de los Botones
 
-- **Botón 1 (BT1)**: Cambia el canal de transmisión.
-  - Cada vez que se presiona, selecciona un grupo de 5 canales consecutivos para el jamming o escaneo.
-  - Los canales se reinician al alcanzar el valor máximo.
+- **Botón 1 (BT1)**: Cambia el grupo de canales activos.
+  - Cada vez que se presiona, selecciona un grupo de 5 canales consecutivos tanto para el modo de jamming como para el de escaneo.
+  - El índice del grupo de canales (variable `channels` en el código, que cicla de 0 a 13) se reinicia al alcanzar el valor máximo.
 
 - **Botón 2 (BT2)**: Alterna entre los modos de "jamming" y "escaneo".
-  - **Modo Jamming** (`jamming = true`): Transmite un patrón de interferencia en el grupo de canales seleccionado.
-  - **Modo Escaneo** (`jamming = false`): Realiza un escaneo del espectro en el grupo de canales seleccionado y muestra los datos en la pantalla OLED y en el monitor serial.
+  - **Modo Jamming** (`jamming = true`): Transmite un patrón de interferencia en el grupo de 5 canales seleccionado por BT1.
+  - **Modo Escaneo** (`jamming = false`): Realiza un escaneo del espectro en el grupo de 5 canales seleccionado por BT1. Los niveles de actividad de estos 5 canales se muestran en la pantalla OLED.
 
 ## Visualización de Resultados
 
-1. **Monitor Serial**: Muestra los niveles de actividad en cada canal escaneado.
-2. **Pantalla OLED**: Visualiza la intensidad de señal en cada canal en el grupo actual.
+1. **Monitor Serial**: Actualmente no se utiliza para mostrar los niveles de actividad de cada canal escaneado; esta información se visualiza en la pantalla OLED. El puerto serial está inicializado y puede usarse para otros fines de depuración si se modifica el código.
+2. **Pantalla OLED**: Visualiza la intensidad de señal para cada uno de los 5 canales dentro del grupo actualmente seleccionado por BT1. Muestra el índice del grupo, el canal con la señal más fuerte dentro de ese grupo y su nivel de actividad.
 
 ## Propósito Educativo y Advertencia
 
